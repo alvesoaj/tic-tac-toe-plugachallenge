@@ -1,5 +1,4 @@
 class Actor
-    def initialize(marker)
-        @marker = marker
-    end
+    attr_accessor :marker, :name
+    attr_reader :type
 end

@@ -6,59 +6,148 @@ class Game
     # Including Window to use its methods as instance
     include Window
 
+    GAME_MODE_MAN_X_MAN = 0
+    GAME_MODE_MAN_X_BOT = 1
+    GAME_MODE_BOT_X_BOT = 2
+
     def initialize
         @board = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
-        @com = "✘" # the computer's marker
-        @hum = "⏺" # the user's marker
+        @crs_mark = "✘"
+        @dot_mark = "⏺"
         @mode = nil
+        @level = nil
+        @index = 0
         @players = []
     end
 
     def start_game
         # print a presentation screen
-        print_start_screen
+        # print_start_screen
+        
         # ask game mode to set playes
         get_game_mode_and_set_players
+
+        # if a human in game, set level, set markers, raffle
+        if @mode == GAME_MODE_MAN_X_MAN || @mode == GAME_MODE_MAN_X_BOT
+            set_game_level
+            set_players_marker
+            hold_a_draw
+        end
+        
         # start by printing the board
         print_game_screen
+        
         # loop through until the game was won or tied
         until game_is_over(@board) || tie(@board)
-            get_human_spot
-            if !game_is_over(@board) && !tie(@board)
-                get_robot_spot
+            # getting player in this turn
+            player = @players[@index]
+
+            # changind player index
+            change_index
+
+            if player.type == :human
+                # if mode MAN against MAN
+                if @mode == GAME_MODE_MAN_X_MAN
+                    message = "#{player.name}\nIt is\nyour turn!\n"
+                end
+                get_human_spot(player.marker, message)
+            else
+                if !game_is_over(@board) && !tie(@board)
+                    get_robot_spot(player.marker, "#{player.name} says:\nIt is\nmy turn!\n")
+                end
             end
         end
-        puts "Game over"
+
+        # print a winner message
+        puts("#{@players[@index]} WON!")
+
+        # print game over
+        puts("Game over")
     end
 
     def get_game_mode_and_set_players
         # print mod selection screen
         print_mode_selector
-        until @mode
-            @mode = gets.chomp.to_i
-            if @mode < 0 && @mode > 2
-                @mode = nil
-            end
-        end
 
-        if @mode == 0
-            @playes = [Human.new, Robot.new]
-        elsif @mode == 1
-            @playes = [Human.new, Human.new]
+        # read mode from input
+        @mode = get_valid_input((0..2))
+
+        # if MAN agains MAN
+        if @mode == GAME_MODE_MAN_X_MAN
+            @players = [Human.new, Human.new]
+        elsif @mode == GAME_MODE_MAN_X_BOT
+            # if MAN agains ROBOT
+            @players = [Human.new, Robot.new]
         else
-            @playes = [Robot.new(), Robot.new]
-        end     
+            # if ROBOT agains ROBOT
+            @players = [Robot.new(@crs_mark), Robot.new(@dot_mark)]
+        end
     end
 
-    def get_human_spot
-        print_human_turn
+    def set_game_level
+        # print presentation screen
+        print_level_selector
+
+        # read a option from input
+        @level = get_valid_input((0..2))
+    end
+
+    def set_players_marker
+        # print presentation screen
+        print_marker_selector
+
+        # read a option from input
+        option = get_valid_input((0..1))
+
+        # if CRS select
+        if option == 0
+            @players[0].marker = @dot_mark
+            @players[1].marker = @crs_mark
+        else
+            # if DOT selected
+            @players[0].marker = @crs_mark
+            @players[1].marker = @dot_mark
+        end
+    end
+
+    def hold_a_draw
+        # print presentation screen
+        print_raffle_selector
+
+        # read a option from input
+        option = get_valid_input((0..1))
+
+        sleep(1.5)
+
+        # rand a value to test
+        v = rand() > 0.5 ? :h : :t
+
+        # test if selection is in scope
+        if (option == 0 && v == :h) || (option == 1 && v == :t)
+            @index = 0
+            puts("Great!\nYou start!")
+        else
+            @index = 1
+            puts("=(\nU play after!")
+        end
+
+        sleep(1.5)
+    end
+
+    def change_index
+        @index = @index == 0 ? 1 : 0
+    end
+
+    def get_human_spot(marker, message=nil)
+        print_human_turn(message)
         spot = nil
         until spot
-            spot = gets.chomp.to_i
-            if spot >= 0 && spot <= 8 && @board[spot] != "✘" && @board[spot] != "⏺"
-                @board[spot] = @hum
-            elsif spot == 9
+            spot = get_valid_input((0..9))
+            if spot == 9
+                puts("See you\nCoward!")
                 abort
+            elsif @board[spot] != "✘" && @board[spot] != "⏺"
+                @board[spot] = marker
             else
                 spot = nil
             end
@@ -67,30 +156,30 @@ class Game
         sleep(1.5)
     end
 
-    def get_robot_spot
-        print_robot_turn
+    def get_robot_spot(marker, message=nil)
+        print_robot_turn(message)
         sleep(2)
         spot = nil
         until spot
             if @board[4] == "4"
                 spot = 4
-                @board[spot] = @com
+                @board[spot] = marker
             else
-                spot = get_best_move(@board, @com)
+                spot = get_best_move(@board, marker)
                 if @board[spot] != "✘" && @board[spot] != "⏺"
-                    @board[spot] = @com
+                    @board[spot] = marker
                 else
                     spot = nil
                 end
             end
         end
-        print "My choice id #{spot}"
+        print "My choice is #{spot}"
         sleep(1.5)
         print_game_screen
         sleep(1.5)
     end
 
-    def get_best_move(board, next_player, depth = 0, best_score = {})
+    def get_best_move(board, next_player, depth=0, best_score={})
         available_spaces = []
         best_move = nil
         board.each do |s|
@@ -99,13 +188,13 @@ class Game
             end
         end
         available_spaces.each do |as|
-            board[as.to_i] = @com
+            board[as.to_i] = @crs_mark
             if game_is_over(board)
                 best_move = as.to_i
                 board[as.to_i] = as
                 return best_move
             else
-                board[as.to_i] = @hum
+                board[as.to_i] = @dot_mark
                 if game_is_over(board)
                     best_move = as.to_i
                     board[as.to_i] = as
@@ -136,6 +225,18 @@ class Game
 
     def tie(b)
         b.all? { |s| s == "✘" || s == "⏺" }
+    end
+
+    def get_valid_input(range)
+        option = nil
+        until option
+            option = gets.chomp
+            if option != '' && range.include?(option.to_i)
+                return option.to_i
+            else
+                option = nil
+            end
+        end
     end
 end
 
