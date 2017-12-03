@@ -1,4 +1,4 @@
-## Challenge
+## CHALLENGE
 
 ### improve:
 
@@ -9,3 +9,25 @@
 
 - Allow the player to choose the level of difficulty, today is always in the difficult (hard);
 - Allow the choice of different types of games (human vs. human, computer vs. computer and hum vs. computer) to be possible;
+
+## RUN
+
+`ruby game.rb`
+
+## EXTRAS
+
+```
+"          "
+"    ["]   "
+"   /[_]\  "
+"    ] [   "
+"          "
+Your Turn!
+
+"     ¤    "
+"    /     "
+" * ["]  ,<"
+" |/[#]\/  "
+"   OOO    "
+ My turn!
+```
