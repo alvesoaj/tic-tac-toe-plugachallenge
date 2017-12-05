@@ -6,14 +6,19 @@ class Game
     # Including Window to use its methods as instance
     include Window
 
+    CRS_MARK = "✘"
+    DOT_MARK = "⏺"
+
     GAME_MODE_MAN_X_MAN = 0
     GAME_MODE_MAN_X_BOT = 1
     GAME_MODE_BOT_X_BOT = 2
 
+    GAME_LEVEL_HARD   = 0
+    GAME_LEVEL_NORMAL = 1
+    GAME_LEVEL_EASY   = 2
+
     def initialize
         @board = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
-        @crs_mark = "✘"
-        @dot_mark = "⏺"
         @mode = nil
         @level = nil
         @index = 0
@@ -46,6 +51,7 @@ class Game
             change_index
 
             if player.type == :human
+                message = "It's your\nturn!"
                 # if mode MAN against MAN
                 if @mode == GAME_MODE_MAN_X_MAN
                     message = "#{player.name}\nIt is\nyour turn!\n"
@@ -58,8 +64,13 @@ class Game
             end
         end
 
-        # print a winner message
-        puts("#{@players[@index]} WON!")
+        if !tie(@board)
+            change_index
+            # print a winner message
+            puts("#{@players[@index].name} WON!")
+        else
+            puts("DRAW!")
+        end
 
         # print game over
         puts("Game over")
@@ -70,7 +81,7 @@ class Game
         print_mode_selector
 
         # read mode from input
-        @mode = get_valid_input((0..2))
+        @mode = get_valid_input((GAME_MODE_MAN_X_MAN..GAME_MODE_BOT_X_BOT))
 
         # if MAN agains MAN
         if @mode == GAME_MODE_MAN_X_MAN
@@ -80,7 +91,7 @@ class Game
             @players = [Human.new, Robot.new]
         else
             # if ROBOT agains ROBOT
-            @players = [Robot.new(@crs_mark), Robot.new(@dot_mark)]
+            @players = [Robot.new(CRS_MARK), Robot.new(DOT_MARK)]
         end
     end
 
@@ -89,7 +100,7 @@ class Game
         print_level_selector
 
         # read a option from input
-        @level = get_valid_input((0..2))
+        @level = get_valid_input((GAME_LEVEL_HARD..GAME_LEVEL_EASY))
     end
 
     def set_players_marker
@@ -101,12 +112,12 @@ class Game
 
         # if CRS select
         if option == 0
-            @players[0].marker = @dot_mark
-            @players[1].marker = @crs_mark
+            @players[0].marker = DOT_MARK
+            @players[1].marker = CRS_MARK
         else
             # if DOT selected
-            @players[0].marker = @crs_mark
-            @players[1].marker = @dot_mark
+            @players[0].marker = CRS_MARK
+            @players[1].marker = DOT_MARK
         end
     end
 
@@ -146,7 +157,7 @@ class Game
             if spot == 9
                 puts("See you\nCoward!")
                 abort
-            elsif @board[spot] != "✘" && @board[spot] != "⏺"
+            elsif @board[spot] != CRS_MARK && @board[spot] != DOT_MARK
                 @board[spot] = marker
             else
                 spot = nil
@@ -161,12 +172,12 @@ class Game
         sleep(2)
         spot = nil
         until spot
-            if @board[4] == "4"
+            if @board[4] == "4" && @level != GAME_LEVEL_EASY
                 spot = 4
                 @board[spot] = marker
             else
                 spot = get_best_move(@board, marker)
-                if @board[spot] != "✘" && @board[spot] != "⏺"
+                if @board[spot] != CRS_MARK && @board[spot] != DOT_MARK
                     @board[spot] = marker
                 else
                     spot = nil
@@ -179,31 +190,82 @@ class Game
         sleep(1.5)
     end
 
-    def get_best_move(board, next_player, depth=0, best_score={})
+    def get_best_move(board, marker, depth=0, best_score={})
         available_spaces = []
         best_move = nil
         board.each do |s|
-            if s != "✘" && s != "⏺"
+            if s != CRS_MARK && s != DOT_MARK
                 available_spaces << s
             end
         end
-        available_spaces.each do |as|
-            board[as.to_i] = @crs_mark
-            if game_is_over(board)
-                best_move = as.to_i
+
+        # if game leves was set to hard
+        if @level == GAME_LEVEL_HARD
+            available_spaces.each do |as|
+                board[as.to_i] = marker
+                if game_is_over(board)
+                    best_move = as.to_i
+                    board[as.to_i] = as
+                    return best_move
+                end
                 board[as.to_i] = as
-                return best_move
-            else
-                board[as.to_i] = @dot_mark
+            end
+            
+            available_spaces.each do |as|
+                board[as.to_i] = (marker == DOT_MARK ? CRS_MARK : DOT_MARK)
+                if game_is_over(board)
+                    best_move = as.to_i
+                    board[as.to_i] = as
+                    return best_move
+                end
+                board[as.to_i] = as
+            end
+        elsif @level == GAME_LEVEL_NORMAL    
+            # if game leves was set to normal
+            available_spaces.each do |as|
+                board[as.to_i] = marker
                 if game_is_over(board)
                     best_move = as.to_i
                     board[as.to_i] = as
                     return best_move
                 else
+                    board[as.to_i] = (marker == DOT_MARK ? CRS_MARK : DOT_MARK)
+                    if game_is_over(board)
+                        best_move = as.to_i
+                        board[as.to_i] = as
+                        return best_move
+                    else
+                        board[as.to_i] = as
+                    end
+                end
+            end
+        else
+            # if game leves was set to easy
+            if rand() > 0.333
+                available_spaces.each do |as|
+                    board[as.to_i] = (marker == DOT_MARK ? CRS_MARK : DOT_MARK)
+                    if game_is_over(board)
+                        best_move = as.to_i
+                        board[as.to_i] = as
+                        return best_move
+                    end
+                    board[as.to_i] = as
+                end
+            end
+
+            if rand() > 0.666
+                available_spaces.each do |as|
+                    board[as.to_i] = marker
+                    if game_is_over(board)
+                        best_move = as.to_i
+                        board[as.to_i] = as
+                        return best_move
+                    end
                     board[as.to_i] = as
                 end
             end
         end
+
         if best_move
             return best_move
         else
@@ -224,7 +286,7 @@ class Game
     end
 
     def tie(b)
-        b.all? { |s| s == "✘" || s == "⏺" }
+        b.all? { |s| s == CRS_MARK || s == DOT_MARK }
     end
 
     def get_valid_input(range)
@@ -234,6 +296,7 @@ class Game
             if option != '' && range.include?(option.to_i)
                 return option.to_i
             else
+                puts("Try again!")
                 option = nil
             end
         end
