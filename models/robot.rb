@@ -31,29 +31,29 @@ class Robot < Actor
 
     private
         def get_best_move(board)
-            has_a_best_movie = false
+            has_a_best_move = false
 
             # if game leves was set to hard
             if self.level == GAME_LEVEL_HARD
-                has_a_best_movie = try_spot_to_win?(board)
-                if !has_a_best_movie
-                    has_a_best_movie = try_a_spot_to_not_lose?(board)
+                has_a_best_move = try_spot_to_win?(board)
+                if !has_a_best_move
+                    has_a_best_move = try_a_spot_to_not_lose?(board)
                 end
             elsif self.level == GAME_LEVEL_NORMAL    
                 # if game leves was set to normal
-                has_a_best_movie = try_a_spot_to_win_and_not_lose?(board)
+                has_a_best_move = try_a_spot_to_win_and_not_lose?(board)
             else
                 # if game leves was set to easy
                 if rand() > 0.333
-                    has_a_best_movie = try_a_spot_to_not_lose?(board)
+                    has_a_best_move = try_a_spot_to_not_lose?(board)
                 end
 
-                if !has_a_best_movie && rand() > 0.666
-                    has_a_best_movie = try_spot_to_win?(board)
+                if !has_a_best_move && rand() > 0.666
+                    has_a_best_move = try_spot_to_win?(board)
                 end
             end
 
-            if !has_a_best_movie
+            if !has_a_best_move
                 @last_spot = board.available_spaces.sample.to_i
                 board.set(@last_spot, self.marker)
             end
