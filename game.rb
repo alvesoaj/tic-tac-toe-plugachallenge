@@ -157,7 +157,7 @@ class Game
             player.get_spot(self.board)
 
             # print a finish presentation
-            print "You chose #{player.last_spot}"
+            puts("You chose #{player.last_spot}")
             self.print_game_screen()
             sleep(1.5)
         end
@@ -173,7 +173,7 @@ class Game
             player.get_spot(self.board)
 
             # print a finish presentation
-            print "My choice is #{player.last_spot}"
+            puts("My choice is #{player.last_spot}")
             sleep(1.5)
             self.print_game_screen()
             sleep(1.5)
